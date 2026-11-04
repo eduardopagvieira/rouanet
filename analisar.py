@@ -31,8 +31,20 @@ ENTRADA = Path("dados/tratados/projetos.csv")
 RESULTADOS = Path("resultados")
 FIGURAS = Path("figuras")
 PAINEL = Path("dados/painel")
+AUX = Path("dados/auxiliares")
 
 COORTE = (2019, 2022)          # anos com prazo de captação já encerrado
+ANOS_COMPLETOS = (2019, 2025)  # 2026 ainda está em curso
+
+UF_DO_CODIGO = {"11": "RO", "12": "AC", "13": "AM", "14": "RR", "15": "PA", "16": "AP", "17": "TO",
+                "21": "MA", "22": "PI", "23": "CE", "24": "RN", "25": "PB", "26": "PE", "27": "AL", "28": "SE",
+                "29": "BA", "31": "MG", "32": "ES", "33": "RJ", "35": "SP", "41": "PR", "42": "SC", "43": "RS",
+                "50": "MS", "51": "MT", "52": "GO", "53": "DF"}
+REGIAO_DA_UF = {**dict.fromkeys(["RO", "AC", "AM", "RR", "PA", "AP", "TO"], "Norte"),
+                **dict.fromkeys(["MA", "PI", "CE", "RN", "PB", "PE", "AL", "SE", "BA"], "Nordeste"),
+                **dict.fromkeys(["MG", "ES", "RJ", "SP"], "Sudeste"),
+                **dict.fromkeys(["PR", "SC", "RS"], "Sul"),
+                **dict.fromkeys(["MS", "MT", "GO", "DF"], "Centro-Oeste")}
 
 # Paleta e tinta (referência de visualização, modo claro)
 SUPERFICIE = "#fcfcfb"
@@ -43,6 +55,7 @@ GRADE = "#e1e0d9"
 EIXO = "#c3c2b7"
 AZUL = "#2a78d6"               # série 1
 LARANJA = "#eb6834"            # série 2
+VERDE = "#1baf7a"              # série 3
 
 plt.rcParams.update({
     "font.family": ["Segoe UI", "DejaVu Sans"],
@@ -83,7 +96,8 @@ def inteiro(v):
 
 
 def subtitulo(ax, texto):
-    ax.text(0, 1.025, texto, transform=ax.transAxes, color=TINTA_2, fontsize=9.5, va="bottom")
+    ax.annotate(texto, (0, 1), xycoords="axes fraction", xytext=(0, 7), textcoords="offset points",
+                color=TINTA_2, fontsize=9.5, va="bottom")
 
 
 def rodape(fig, texto="Fonte: SALIC, Ministério da Cultura (API de dados abertos). Elaboração própria."):
@@ -96,10 +110,34 @@ def grade(ax, eixo="y"):
     ax.tick_params(length=0)
 
 
+# ---------- dados do IBGE ----------
+
+def sidra(url, destino, montar):
+    """Baixa uma tabela do SIDRA uma vez e guarda em dados/auxiliares."""
+    if not destino.exists():
+        import requests
+        r = requests.get(url, timeout=120)
+        r.raise_for_status()
+        AUX.mkdir(parents=True, exist_ok=True)
+        montar(r.json()[1:]).to_csv(destino, index=False)
+    return pd.read_csv(destino)
+
+
+def populacao_e_pib():
+    """População do Censo 2022 (tabela 4709) e PIB de 2023 (tabela 5938) por UF."""
+    pop = sidra("https://apisidra.ibge.gov.br/values/t/4709/n3/all/v/93/p/2022", AUX / "populacao_uf.csv",
+                lambda l: pd.DataFrame({"uf": [x["D1C"] for x in l], "populacao": [int(x["V"]) for x in l]})
+                .assign(uf=lambda d: d["uf"].map(UF_DO_CODIGO)))
+    pib = sidra("https://apisidra.ibge.gov.br/values/t/5938/n3/all/v/37/p/2023", AUX / "pib_uf_2023.csv",
+                lambda l: pd.DataFrame({"uf": [x["D1C"] for x in l], "pib": [float(x["V"]) * 1000 for x in l]})
+                .assign(uf=lambda d: d["uf"].map(UF_DO_CODIGO)))
+    return pop.merge(pib, on="uf").set_index("uf")
+
+
 # ---------- tabelas ----------
 
 def agregar(df, chave):
-    g = df.groupby(chave).agg(
+    g = df.groupby(chave, observed=True).agg(
         projetos=("pronac", "size"),
         valor_aprovado=("valor_aprovado", "sum"),
         valor_captado=("valor_captado", "sum"),
@@ -231,6 +269,151 @@ def grafico_regiao(por_regiao):
     plt.close(fig)
 
 
+def grafico_regiao_pop_pib(r):
+    r = r.sort_values("captado")
+    y = np.arange(len(r))
+    fig, ax = plt.subplots(figsize=(9, 5.2))
+    h = 0.26
+    series = [("captado", LARANJA, "Parcela do valor captado"), ("pib", VERDE, "Parcela do PIB (2023)"),
+              ("populacao", AZUL, "Parcela da população (2022)")]
+    for k, (col, cor, rotulo) in enumerate(series):
+        pos = y + (1 - k) * (h + 0.02)
+        ax.barh(pos, r[col], h, color=cor, label=rotulo, edgecolor=SUPERFICIE, linewidth=1)
+        for p, v in zip(pos, r[col]):
+            ax.text(v + 0.006, p, pct(v), va="center", fontsize=8.5, color=TINTA_2)
+    ax.set_yticks(y, r.index, color=TINTA)
+    ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: pct(v)))
+    ax.set_xlim(0, r[["captado", "pib", "populacao"]].max().max() * 1.12)
+    grade(ax, "x")
+    ax.spines["left"].set_visible(False)
+    ax.legend(frameon=False, loc="lower right", fontsize=9)
+    ax.set_title("A captação vai além do peso econômico do Sudeste")
+    subtitulo(ax, f"Parcela de cada região no valor captado ({ANOS_COMPLETOS[0]} a {ANOS_COMPLETOS[1]}), no PIB e na população")
+    rodape(fig, "Fonte: SALIC (Ministério da Cultura), IBGE (Censo 2022 e Contas Regionais). Elaboração própria.")
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    fig.savefig(FIGURAS / "06_regiao_pop_pib.png", dpi=160)
+    plt.close(fig)
+
+
+def grafico_faixas(f):
+    fig, ax = plt.subplots(figsize=(9, 5))
+    x = np.arange(len(f))
+    ax.bar(x, f["pct_projetos_que_captaram"], 0.6, color=AZUL, edgecolor=SUPERFICIE, linewidth=1)
+    for i, (_, l) in enumerate(f.iterrows()):
+        ax.text(i, l["pct_projetos_que_captaram"] + 0.015, pct(l["pct_projetos_que_captaram"]), ha="center",
+                fontsize=9.5, color=TINTA)
+        ax.text(i, 0.02, f"{inteiro(l['projetos'])}\nprojetos", ha="center", va="bottom", fontsize=8,
+                color=SUPERFICIE)
+    ax.set_xticks(x, f.index, color=TINTA)
+    ax.set_ylim(0, 1)
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: pct(v)))
+    grade(ax)
+    ax.set_title("Projetos grandes conseguem patrocínio com mais frequência")
+    subtitulo(ax, f"Parcela dos projetos que captaram algum valor, por faixa de valor aprovado. Projetos de {COORTE[0]} a {COORTE[1]}")
+    rodape(fig)
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    fig.savefig(FIGURAS / "08_faixa_de_valor.png", dpi=160)
+    plt.close(fig)
+
+
+def grafico_concentracao_ano(c):
+    fig, ax = plt.subplots(figsize=(9, 5))
+    anos = c.index.to_numpy()
+    for col, cor, rotulo in (("top82", LARANJA, "82 maiores proponentes"), ("top20", AZUL, "20 maiores proponentes")):
+        ax.plot(anos, c[col], color=cor, linewidth=2, marker="o", markersize=7, markeredgecolor=SUPERFICIE,
+                markeredgewidth=2, label=rotulo)
+        ax.text(anos[0] - 0.15, c[col].iloc[0], pct(c[col].iloc[0]), ha="right", va="center", fontsize=9, color=TINTA_2)
+        ax.text(anos[-1] + 0.15, c[col].iloc[-1], pct(c[col].iloc[-1]), ha="left", va="center", fontsize=9, color=TINTA_2)
+    ax.axvspan(2022.5, anos.max() + 0.6, color="#f0efec", zorder=0)
+    ax.text(2022.6, 0.68, "Projetos ainda captando", fontsize=8.5, color=TINTA_2, va="top")
+    ax.set_xticks(anos)
+    ax.set_xlim(anos.min() - 0.6, anos.max() + 0.6)
+    ax.set_ylim(0, 0.7)
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: pct(v)))
+    grade(ax)
+    ax.legend(frameon=False, loc="upper right", fontsize=9, bbox_to_anchor=(1, 1.0))
+    ax.set_title("A fatia dos maiores caiu quando a base de proponentes cresceu")
+    subtitulo(ax, "Parcela do valor captado pelos maiores proponentes, por ano do projeto")
+    rodape(fig)
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    fig.savefig(FIGURAS / "10_concentracao_por_ano.png", dpi=160)
+    plt.close(fig)
+
+
+def literatura(t, aprovados, coorte):
+    """Indicadores que dialogam com os estudos sobre a Lei Rouanet (ver README)."""
+    completos = aprovados[aprovados["ano"].between(*ANOS_COMPLETOS)]
+    total = completos["valor_captado"].sum()
+    ibge = populacao_e_pib()
+
+    # Região contra população e PIB
+    ibge_reg = ibge.groupby(ibge.index.map(REGIAO_DA_UF)).sum()
+    reg = pd.DataFrame({"captado": completos.groupby("regiao")["valor_captado"].sum() / total,
+                        "populacao": ibge_reg["populacao"] / ibge_reg["populacao"].sum(),
+                        "pib": ibge_reg["pib"] / ibge_reg["pib"].sum()})
+    reg.to_csv(RESULTADOS / "regiao_populacao_pib.csv", encoding="utf-8-sig")
+    grafico_regiao_pop_pib(reg)
+
+    # Captado por habitante e em relação ao PIB, por UF
+    uf = completos.groupby("uf")["valor_captado"].sum().to_frame("valor_captado").join(ibge)
+    uf["por_habitante"] = uf["valor_captado"] / uf["populacao"]
+    uf["por_mil_reais_de_pib"] = uf["valor_captado"] / uf["pib"] * 1000
+    uf.sort_values("por_habitante", ascending=False).to_csv(RESULTADOS / "uf_por_habitante.csv", encoding="utf-8-sig")
+    media = total / ibge["populacao"].sum()
+    grafico_barras_h(uf["por_habitante"], {}, "Rio de Janeiro e São Paulo lideram a captação por habitante",
+                     f"Valor captado por habitante, projetos de {ANOS_COMPLETOS[0]} a {ANOS_COMPLETOS[1]}, em R$",
+                     "07_por_habitante_uf.png", formato=lambda v: f"R$ {v:.0f}", media=media)
+
+    # Faixa de valor aprovado (coorte encerrada)
+    faixas = pd.cut(coorte["valor_aprovado"], [0, 1e5, 3e5, 1e6, 3e6, np.inf],
+                    labels=["até 100 mil", "100 a 300 mil", "300 mil a 1 mi", "1 a 3 mi", "acima de 3 mi"])
+    por_faixa = agregar(coorte.assign(faixa=faixas), "faixa")
+    por_faixa.to_csv(RESULTADOS / "por_faixa_de_valor.csv", encoding="utf-8-sig")
+    grafico_faixas(por_faixa)
+
+    # Proponentes por região, primeiro e último ano completos
+    prop = aprovados.groupby(["regiao", "ano"])["cpf_cnpj"].nunique().unstack()
+    ini, fim = ANOS_COMPLETOS
+    cresc = (prop[fim] / prop[ini] - 1).rename("crescimento")
+    pd.concat([prop[[ini, fim]], cresc], axis=1).to_csv(RESULTADOS / "proponentes_por_regiao.csv", encoding="utf-8-sig")
+    grafico_barras_h(cresc, {k: f"({inteiro(prop.loc[k, ini])} para {inteiro(prop.loc[k, fim])})" for k in cresc.index},
+                     "O número de proponentes cresceu mais no Nordeste e no Norte",
+                     f"Crescimento dos proponentes com projeto aprovado, de {ini} para {fim}",
+                     "09_proponentes_por_regiao.png", formato=lambda v: pct(v))
+
+    # Concentração ano a ano (20 e 82 maiores, os recortes usados por Teixeira, Xavier e Faria)
+    linhas = {}
+    for ano, g in completos.groupby("ano"):
+        p = g.groupby("cpf_cnpj")["valor_captado"].sum().sort_values(ascending=False)
+        linhas[ano] = {"proponentes": len(p), "proponentes_que_captaram": int((p > 0).sum()),
+                       "top20": p.head(20).sum() / p.sum(), "top82": p.head(82).sum() / p.sum()}
+    conc = pd.DataFrame(linhas).T
+    conc.to_csv(RESULTADOS / "concentracao_por_ano.csv", encoding="utf-8-sig")
+    grafico_concentracao_ano(conc)
+
+    # Números citados no README
+    capitais = (((completos["municipio"] == "São Paulo") & (completos["uf"] == "SP"))
+                | ((completos["municipio"] == "Rio de Janeiro") & (completos["uf"] == "RJ")))
+    mun = completos.groupby(["municipio", "uf"])["valor_captado"].sum()
+    return {
+        f"parcela do Sudeste no captado ({ini} a {fim})": pct(reg.loc["Sudeste", "captado"], 1),
+        "parcela do Sudeste no PIB (2023)": pct(reg.loc["Sudeste", "pib"], 1),
+        "parcela do Sudeste na população (2022)": pct(reg.loc["Sudeste", "populacao"], 1),
+        "parcela do Norte e Nordeste no captado": pct(reg.loc[["Norte", "Nordeste"], "captado"].sum(), 1),
+        "parcela do Norte e Nordeste na população": pct(reg.loc[["Norte", "Nordeste"], "populacao"].sum(), 1),
+        "parcela das capitais SP e RJ no captado": pct(completos.loc[capitais, "valor_captado"].sum() / total),
+        "municípios de proponentes que captaram algo": inteiro((mun > 0).sum()),
+        "parcela do captado pelo Artigo 18 (dedução integral)":
+            pct(completos.loc[completos["enquadramento"] == "Artigo 18", "valor_captado"].sum() / total, 1),
+        "parcela do captado por planos anuais":
+            pct(completos.loc[completos["tipicidade"] == "Planos Anuais", "valor_captado"].sum() / total),
+        "captado por habitante, média do Brasil": f"R$ {media:.0f}",
+        "captado por habitante, SP": f"R$ {uf.loc['SP', 'por_habitante']:.0f}",
+        "captado por habitante, RJ": f"R$ {uf.loc['RJ', 'por_habitante']:.0f}",
+        "UFs abaixo de R$ 15 por habitante": inteiro((uf["por_habitante"] < 15).sum()),
+    }
+
+
 # ---------- principal ----------
 
 def analisar():
@@ -295,6 +478,7 @@ def analisar():
         "parcela do captado com os 10% maiores": pct(fatias[0.10]),
         "proponentes que não captaram nada": pct((por_prop == 0).mean()),
     }
+    resumo.update(literatura(t, aprovados, coorte))
     pd.Series(resumo, name="valor").rename_axis("indicador").to_csv(RESULTADOS / "resumo.csv", encoding="utf-8-sig")
 
     # Base para o Power BI (pt-BR)

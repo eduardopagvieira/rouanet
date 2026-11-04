@@ -11,6 +11,7 @@ Análise dos 63.674 projetos registrados no SALIC entre 2019 e 2026, da coleta n
 * **Empresas captam muito mais que pessoas físicas.** Pessoas jurídicas captaram 54% do valor aprovado, contra 20% das pessoas físicas e 29% dos MEIs.
 * **O Sudeste capta mais do que sua parcela de projetos.** A região tem 60% dos projetos aprovados e 76% do valor captado. Sul, Nordeste e Centro-Oeste captam menos do que sua parcela.
 * **Museus captam mais, festas e cultura popular bem menos.** Museus e memória captaram 68% do valor aprovado. Festas e cultura popular, 24%.
+* **Quase tudo é renúncia integral.** 99,4% do valor captado entrou pelo Artigo 18, em que o patrocinador deduz 100% do imposto. Detalhes e comparação com a literatura na seção abaixo.
 * **O valor aprovado se multiplicou a partir de 2023.** Passou de R$ 2 a 4 bilhões por ano para R$ 16 a 20 bilhões, sem crescimento equivalente da captação até agora.
 
 ![Valor aprovado e captado por ano](figuras/01_serie_anual.png)
@@ -23,9 +24,63 @@ Análise dos 63.674 projetos registrados no SALIC entre 2019 e 2026, da coleta n
 
 Os maiores captadores no período são grandes instituições culturais do Sudeste, como a Fundação OSESP, o MASP, o Instituto Inhotim, o Instituto de Desenvolvimento e Gestão (IDG) e a Orquestra Sinfônica Brasileira. Cada uma captou entre R$ 179 e 249 milhões. A lista completa está em `resultados/top20_proponentes_pj.csv`.
 
+## O que a literatura diz e o que os dados mostram
+
+A Lei Rouanet é uma das políticas culturais mais estudadas e mais disputadas do país. Esta seção confronta as principais teses sobre ela com a base do SALIC. Os números saem de `analisar.py` e estão em `resultados/`.
+
+### Dinheiro público, escolha privada
+
+A crítica mais antiga à lei é que o Estado abre mão do imposto, mas quem decide o destino do dinheiro é o departamento de marketing da empresa patrocinadora. No Artigo 18 o patrocinador deduz 100% do valor do imposto de renda devido, e no Artigo 26 a dedução é parcial e a empresa coloca parte do próprio dinheiro. Na base, **99,4% do valor captado de 2019 a 2025 entrou pelo Artigo 18**. Na prática quase todo o mecanismo é renúncia fiscal integral, o que reforça o argumento de que a escolha é privada com dinheiro inteiramente público.
+
+Essa lógica ajuda a explicar quem consegue captar. Projetos acima de R$ 1 milhão captaram algum valor em 76% a 78% dos casos, contra 36% na faixa de R$ 100 a 300 mil, onde está o maior número de projetos. Grandes instituições têm equipe de captação, marca conhecida e relação com patrocinadores. Os planos anuais, modalidade usada por instituições que mantêm programação contínua, ficaram com 20% de todo o valor captado.
+
+![Taxa de sucesso por faixa de valor](figuras/08_faixa_de_valor.png)
+
+### Concentração regional
+
+Teixeira, Xavier e Faria (2024) estimam que o Sudeste concentrou perto de 80% da captação ao longo da história da lei, número próximo do apresentado à CPI da Lei Rouanet na Câmara em 2016. O Ministério da Cultura atribui parte disso ao fato de que só empresas tributadas pelo lucro real podem patrocinar, e elas se concentram no Sudeste.
+
+Os dados de 2019 a 2025 confirmam a concentração, um pouco menor que a média histórica. **O Sudeste ficou com 73,9% do valor captado, com 53% do PIB e 42% da população.** O argumento do lucro real explica parte da distância, mas não toda, porque a região capta bem mais do que seu peso econômico. Norte e Nordeste somam 35,5% da população e 8,6% da captação. As capitais São Paulo e Rio de Janeiro, sozinhas, respondem por 51% do valor captado.
+
+Por habitante, o Rio de Janeiro capta R$ 184 e São Paulo R$ 137, contra uma média nacional de R$ 75. Em 14 das 27 UFs a captação fica abaixo de R$ 15 por habitante.
+
+![Região contra PIB e população](figuras/06_regiao_pop_pib.png)
+
+![Captação por habitante por UF](figuras/07_por_habitante_uf.png)
+
+### Desconcentração recente
+
+O estudo da FGV encomendado pelo Ministério da Cultura (2026) registra que o número de proponentes cresceu 408% no Norte e 428% no Nordeste entre 2018 e 2024, contra 123% no Sudeste. Os dados do SALIC apontam na mesma direção. De 2019 para 2025, os proponentes com projeto aprovado no Nordeste passaram de 187 para 1.667 (alta de 791%) e no Norte de 73 para 423, contra alta de 310% no Sudeste.
+
+A ressalva é que mais proponentes não significa mais dinheiro. A parcela do Nordeste no valor captado ficou entre 4% e 7% em todos os anos, e a do Sudeste caiu pouco, de 79% nos projetos de 2019 para 72% nos de 2025. A base cresceu mais rápido na ponta da aprovação do que na da captação.
+
+![Crescimento dos proponentes por região](figuras/09_proponentes_por_regiao.png)
+
+### Poucos proponentes, muito dinheiro
+
+Teixeira, Xavier e Faria (2024) mostram que 82 proponentes ficaram com cerca de 45% da captação de 2024 e 20 entidades com 28%. Aqui o recorte é por ano do projeto, não por ano da captação, então os números não são diretamente comparáveis. Nos projetos de 2019 a 2021, os 82 maiores proponentes captaram mais da metade do valor e os 20 maiores perto de um terço. Nos projetos de 2023 a 2025 essas parcelas caíram para perto de 37% e 15% a 20%. Parte da queda é real, porque o número de proponentes triplicou, mas parte vem de os projetos recentes ainda estarem captando.
+
+![Concentração por ano](figuras/10_concentracao_por_ano.png)
+
+### Impacto econômico
+
+O mesmo estudo estimou que cada R$ 1 executado em projetos da lei movimentou R$ 7,59 na economia em 2024, com 228 mil postos de trabalho. A edição anterior, de 2018, falava em R$ 1,59. A diferença grande entre as duas vem em boa parte de mudanças de método, e um multiplicador de produção não é o mesmo que retorno para o Estado. Esta base não permite testar esses números, porque não traz gastos dos projetos nem dados de emprego.
+
+### Prestação de contas
+
+O TCU aponta um estoque de dezenas de milhares de projetos com prestação de contas pendente. Na base, 316 projetos aprovados estão em situação irregular (inadimplentes, com contas reprovadas ou em tomada de contas especial) e mais de 10 mil estão na etapa de prestação de contas. A API não informa a data em que cada etapa começou, então não dá para medir o atraso.
+
+### Referências
+
+* Teixeira, L. C., Xavier, W. S. e Faria, E. R. (2024). Distribuição geográfica de projetos culturais com captação de recursos via Lei Rouanet. *DRd, Desenvolvimento Regional em Debate*, v. 14, p. 556 a 578. [periodicos.unc.br](https://www.periodicos.unc.br/index.php/drd/article/view/5320/2274)
+* Fundação Getulio Vargas (2026). Impacto econômico da Lei Rouanet. Estudo encomendado pelo Ministério da Cultura. [PDF divulgado pelo Poder360](https://static.poder360.com.br/2026/01/PESQUISA-ROUANET-fgv-1.pdf)
+* Brasil de Fato (2026). Lei Rouanet gera empregos e impacto bilionário, mas Sul e Sudeste ainda concentram 86% dos projetos. [brasildefato.com.br](https://www.brasildefato.com.br/2026/01/13/lei-rouanet-gera-empregos-e-impacto-bilionario-mas-sul-e-sudeste-ainda-concentram-86-dos-projetos/)
+* Câmara dos Deputados (2016). CPI da Lei Rouanet, apresentações em audiências públicas. [camara.leg.br](https://www2.camara.leg.br/atividade-legislativa/comissoes/comissoes-temporarias/parlamentar-de-inquerito/55a-legislatura/cpi-lei-rouanet/documentos/audiencias-publicas/ApresentacaoJucanaCPIv5.pdf)
+* Congresso em Foco. Os números contraditórios da Rouanet não mentem. [congressoemfoco.com.br](https://www.congressoemfoco.com.br/artigo/115490/os-numeros-contraditorios-da-rouanet-nao-mentem)
+
 ## Fonte
 
-API de dados abertos do SALIC, do Ministério da Cultura (`http://api.salic.cultura.gov.br/api/v1/projetos/`). A API devolve 34 campos por projeto, entre eles segmento, UF, município, proponente, situação e os valores solicitado, aprovado e captado. Ela só cobre projetos de 2019 em diante.
+API de dados abertos do SALIC, do Ministério da Cultura (`http://api.salic.cultura.gov.br/api/v1/projetos/`). A API devolve 34 campos por projeto, entre eles segmento, UF, município, proponente, situação e os valores solicitado, aprovado e captado. Ela só cobre projetos de 2019 em diante. População (Censo 2022, tabela 4709) e PIB por UF (2023, tabela 5938) vêm do SIDRA, do IBGE, e são baixados por `analisar.py`.
 
 ## Método
 
