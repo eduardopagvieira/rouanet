@@ -7,11 +7,15 @@ Uso (no terminal, dentro da pasta do projeto):
     python coletar_salic.py --workers 4  # muda o número de conexões simultâneas (padrão 6)
 
 Saídas:
-    dados/brutos/pagina_000000.json    uma página da API por arquivo (dado bruto, nunca editado)
-    dados/projetos_salic.csv           todas as páginas juntas numa tabela
+    dados/brutos/pagina_000000.json.gz   uma página da API por arquivo, compactada (dado bruto, nunca editado)
+    dados/projetos_salic.csv.gz          todas as páginas juntas numa tabela, compactada
+
+Os arquivos são compactados com gzip porque a base sem compactar passa de 2,5 GB.
+O pandas lê .csv.gz direto (pd.read_csv("dados/projetos_salic.csv.gz")).
 """
 
 import argparse
+import gzip
 import json
 import threading
 import time
@@ -27,7 +31,7 @@ PAUSA = 0.5               # segundos entre requisições, para não sobrecarrega
 TENTATIVAS = 6
 
 PASTA_BRUTOS = Path("dados/brutos")
-SAIDA_CSV = Path("dados/projetos_salic.csv")
+SAIDA_CSV = Path("dados/projetos_salic.csv.gz")
 
 
 def baixar_pagina(sessao, offset):
@@ -71,17 +75,23 @@ def sessao_da_thread():
 
 
 def arquivo_da_pagina(offset):
-    return PASTA_BRUTOS / f"pagina_{offset:06d}.json"
+    return PASTA_BRUTOS / f"pagina_{offset:06d}.json.gz"
+
+
+def ler_pagina(arquivo):
+    with gzip.open(arquivo, "rt", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def obter_pagina(offset, sessao=None):
     """Lê do disco se já baixada; senão baixa e salva (via arquivo temporário, para não deixar JSON pela metade)."""
     arquivo = arquivo_da_pagina(offset)
     if arquivo.exists():                           # retomada: pula o que já foi baixado
-        return json.loads(arquivo.read_text(encoding="utf-8"))
+        return ler_pagina(arquivo)
     resposta = baixar_pagina(sessao or sessao_da_thread(), offset)
     temporario = arquivo.with_suffix(".tmp")
-    temporario.write_text(json.dumps(resposta, ensure_ascii=False), encoding="utf-8")
+    with gzip.open(temporario, "wt", encoding="utf-8") as f:
+        json.dump(resposta, f, ensure_ascii=False)
     temporario.replace(arquivo)
     time.sleep(PAUSA)
     return resposta
@@ -122,12 +132,12 @@ def coletar(teste=False, workers=6):
 
 def juntar():
     linhas = []
-    for arquivo in sorted(PASTA_BRUTOS.glob("pagina_*.json")):
-        resposta = json.loads(arquivo.read_text(encoding="utf-8"))
+    for arquivo in sorted(PASTA_BRUTOS.glob("pagina_*.json.gz")):
+        resposta = ler_pagina(arquivo)
         linhas.extend(extrair_registros(resposta))
     tabela = pd.json_normalize(linhas)
     tabela = tabela.loc[:, ~tabela.columns.str.startswith("_links")]   # descarta links internos da API
-    tabela.to_csv(SAIDA_CSV, index=False, encoding="utf-8-sig")
+    tabela.to_csv(SAIDA_CSV, index=False, encoding="utf-8-sig", compression="gzip")
     print(f"{len(tabela)} projetos e {tabela.shape[1]} colunas salvos em {SAIDA_CSV}")
 
 
