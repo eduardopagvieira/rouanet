@@ -1,0 +1,40 @@
+table ufs
+	lineageTag: daafe135-2d5b-52c1-b16a-2b4b224e907e
+
+	column uf
+		dataType: string
+		lineageTag: 9b27cce2-6b5b-5155-bfbb-2be16bd2e484
+		summarizeBy: none
+		sourceColumn: uf
+
+	column regiao
+		dataType: string
+		lineageTag: 7352564b-132b-5437-9a5b-52fc7d464532
+		summarizeBy: none
+		sourceColumn: regiao
+
+	column populacao
+		dataType: int64
+		formatString: #,0
+		lineageTag: e0987618-fccb-5b55-9159-ca5ab139bae9
+		summarizeBy: sum
+		sourceColumn: populacao
+
+	column pib
+		dataType: double
+		formatString: #,0
+		lineageTag: 8323fa22-0197-5711-b0f3-6586a99dbc41
+		summarizeBy: sum
+		sourceColumn: pib
+
+	partition ufs = m
+		mode: import
+		source =
+				let
+					Fonte = Csv.Document(File.Contents(PastaDados & "\ufs_powerbi.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),
+					Tipos = Table.TransformColumnTypes(Cabecalhos, {{"uf", type text}, {"regiao", type text}, {"populacao", Int64.Type}, {"pib", type number}}, "pt-BR")
+				in
+					Tipos
+
+	annotation PBI_ResultType = Table

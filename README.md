@@ -105,9 +105,13 @@ Um projeto aprovado tem cerca de dois anos para captar, com prorrogações. Em 2
 
 ## Painel
 
-Painel interativo em Power BI com quatro páginas (visão geral, território, áreas e proponentes) e filtros de ano, região, área e tipo de proponente. O projeto fica em `painel/Rouanet.pbip`, salvo em arquivos de texto e gerado pelo script `painel/gerar_pbip.py`. Detalhes e medidas DAX em [`painel/README.md`](painel/README.md).
+Painel interativo em Power BI com cinco páginas (visão geral, território, áreas, proponentes e desigualdade) e filtros de ano, região, área e tipo de proponente. O projeto fica em `painel/Rouanet.pbip`, salvo em arquivos de texto e gerado pelo script `painel/gerar_pbip.py`. Detalhes e medidas DAX em [`painel/README.md`](painel/README.md).
 
 ![Painel em Power BI](figuras/05_painel_powerbi.png)
+
+A página de desigualdade reúne os indicadores da comparação com a literatura.
+
+![Página de desigualdade do painel](figuras/11_painel_desigualdade.png)
 
 ## Como rodar
 

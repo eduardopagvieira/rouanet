@@ -41,6 +41,42 @@ table projetos
 		formatString: 0.0%
 		lineageTag: fece2c59-6536-58a1-9280-f52b8adcc61a
 
+	measure Proponentes = CALCULATE ( DISTINCTCOUNT ( projetos[chave_proponente] ), projetos[aprovado] = TRUE () )
+		formatString: #,0
+		lineageTag: ecd22da2-a80b-506c-a00f-2039fec33809
+
+	measure 'Parcela pelo Artigo 18' = DIVIDE ( CALCULATE ( [Valor captado], projetos[enquadramento] = "Artigo 18" ), [Valor captado] )
+		formatString: 0.0%
+		lineageTag: f9c6e2c8-1136-510c-aae4-574cbf58bc46
+
+	measure População = CALCULATE ( SUM ( ufs[populacao] ), TREATAS ( CALCULATETABLE ( VALUES ( projetos[uf] ), ALLEXCEPT ( projetos, projetos[uf], projetos[regiao] ) ), ufs[uf] ) )
+		formatString: #,0
+		lineageTag: 75d30ae7-1425-58af-a92d-be94a4f4ce4b
+
+	measure PIB = CALCULATE ( SUM ( ufs[pib] ), TREATAS ( CALCULATETABLE ( VALUES ( projetos[uf] ), ALLEXCEPT ( projetos, projetos[uf], projetos[regiao] ) ), ufs[uf] ) )
+		formatString: #,0
+		lineageTag: cfbc307a-48cc-5e20-8f29-e32b6b2e417f
+
+	measure 'Parcela da população' = DIVIDE ( [População], SUM ( ufs[populacao] ) )
+		formatString: 0.0%
+		lineageTag: fff0d29d-4b6c-54cd-b32a-6281f277a814
+
+	measure 'Parcela do PIB' = DIVIDE ( [PIB], SUM ( ufs[pib] ) )
+		formatString: 0.0%
+		lineageTag: c65992f0-564f-5515-a564-642d68c2f42c
+
+	measure 'Captado por habitante' = DIVIDE ( [Valor captado], [População] )
+		formatString: #,0
+		lineageTag: cccd41f0-a58e-52ef-8145-e9d82b19f3a8
+
+	measure 'Parcela dos 20 maiores' = VAR t = ADDCOLUMNS ( VALUES ( projetos[chave_proponente] ), "@v", [Valor captado] ) RETURN DIVIDE ( SUMX ( TOPN ( 20, t, [@v] ), [@v] ), [Valor captado] )
+		formatString: 0.0%
+		lineageTag: cb90566a-1bbc-5514-bab1-22843bd0f868
+
+	measure 'Parcela dos 82 maiores' = VAR t = ADDCOLUMNS ( VALUES ( projetos[chave_proponente] ), "@v", [Valor captado] ) RETURN DIVIDE ( SUMX ( TOPN ( 82, t, [@v] ), [@v] ), [Valor captado] )
+		formatString: 0.0%
+		lineageTag: b32ed91a-30fa-50aa-a0cf-25db3a61374d
+
 	column pronac
 		dataType: string
 		lineageTag: 20ff5065-034b-5c91-afa7-b07e60b94cde
@@ -237,6 +273,25 @@ table projetos
 		summarizeBy: none
 		sourceColumn: periodo_captacao
 
+	column chave_proponente
+		dataType: string
+		lineageTag: 7cdb07e6-8059-5600-b6c5-12bc2529a4a4
+		summarizeBy: none
+		sourceColumn: chave_proponente
+
+	column faixa_valor
+		dataType: string
+		sortByColumn: faixa_ordem
+		lineageTag: 1d412cb4-63d8-5827-948d-5726a3bf432a
+		summarizeBy: none
+		sourceColumn: faixa_valor
+
+	column faixa_ordem
+		dataType: int64
+		lineageTag: 642b399e-5e7c-5aef-b9cd-be74a420a342
+		summarizeBy: none
+		sourceColumn: faixa_ordem
+
 	partition projetos = m
 		mode: import
 		source =
@@ -244,8 +299,11 @@ table projetos
 					Fonte = Csv.Document(File.Contents(PastaDados & "\projetos_powerbi.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
 					Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),
 					Tipos = Table.TransformColumnTypes(Cabecalhos, {{"pronac", type text}, {"nome", type text}, {"ano", Int64.Type}, {"data_inicio", type date}, {"data_termino", type date}, {"uf", type text}, {"regiao", type text}, {"municipio", type text}, {"area", type text}, {"segmento", type text}, {"tipologia", type text}, {"tipicidade", type text}, {"enquadramento", type text}, {"mecanismo", type text}, {"etapa", type text}, {"situacao_salic", type text}, {"proponente", type text}, {"cpf_cnpj", type text}, {"tipo_proponente", type text}, {"valor_proposta", type number}, {"valor_solicitado", type number}, {"valor_aprovado", type number}, {"valor_projeto", type number}, {"valor_captado", type number}, {"outras_fontes", type number}, {"aprovado", type logical}, {"captou", type logical}, {"taxa_captacao", type number}, {"alerta_valor", type text}, {"local_realizacao", type text}}, "pt-BR"),
-					Periodo = Table.AddColumn(Tipos, "periodo_captacao", each if [ano] <= 2022 then "Captação encerrada (2019 a 2022)" else "Ainda captando (2023 a 2026)", type text)
+					Periodo = Table.AddColumn(Tipos, "periodo_captacao", each if [ano] <= 2022 then "Captação encerrada (2019 a 2022)" else "Ainda captando (2023 a 2026)", type text),
+					Chave = Table.AddColumn(Periodo, "chave_proponente", each ([cpf_cnpj] ?? "") & "|" & ([proponente] ?? ""), type text),
+					Faixa = Table.AddColumn(Chave, "faixa_valor", each let v = [valor_aprovado] in if v = null or v <= 0 then null else if v <= 100000 then "até 100 mil" else if v <= 300000 then "100 a 300 mil" else if v <= 1000000 then "300 mil a 1 mi" else if v <= 3000000 then "1 a 3 mi" else "acima de 3 mi", type text),
+					Ordem = Table.AddColumn(Faixa, "faixa_ordem", each if [faixa_valor] = null then null else List.PositionOf({"até 100 mil", "100 a 300 mil", "300 mil a 1 mi", "1 a 3 mi", "acima de 3 mi"}, [faixa_valor]) + 1, Int64.Type)
 				in
-					Periodo
+					Ordem
 
 	annotation PBI_ResultType = Table

@@ -8,7 +8,7 @@ O projeto tem duas partes
 Uso
     python painel/gerar_pbip.py [pagina]
     depois abra painel/Rouanet.pbip no Power BI Desktop e clique em Atualizar
-    pagina é opcional (visao_geral, territorio, areas ou proponentes) e define a página que abre primeiro
+    pagina é opcional (visao_geral, territorio, areas, proponentes ou desigualdade) e define a página que abre primeiro
 
 A consulta lê dados/painel/projetos_powerbi.csv (gerado por analisar.py). O caminho fica no
 parâmetro PastaDados, preenchido com a pasta deste repositório na hora de gerar.
@@ -30,7 +30,7 @@ TEMA_BASE = "CY24SU10"
 SCHEMA = "https://developer.microsoft.com/json-schemas/fabric"
 TABELA = "projetos"
 
-AZUL, LARANJA = "#2a78d6", "#eb6834"
+AZUL, LARANJA, VERDE = "#2a78d6", "#eb6834", "#1baf7a"
 TINTA, TINTA_2, APAGADO, GRADE, SUPERFICIE = "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#fcfcfb"
 
 
@@ -104,7 +104,33 @@ MEDIDAS = [  # nome, DAX, formato
     ("Valor captado 2019-2022", f"CALCULATE ( [Valor captado], {TABELA}[ano] <= 2022 )", "#,0"),
     ("Taxa de captação 2019-2022", f"CALCULATE ( [Taxa de captação], {TABELA}[ano] <= 2022 )", "0.0%"),
     ("% que captaram 2019-2022", f"CALCULATE ( [% que captaram], {TABELA}[ano] <= 2022 )", "0.0%"),
+    # Indicadores da comparação com a literatura (ver README do projeto)
+    ("Proponentes", f"CALCULATE ( DISTINCTCOUNT ( {TABELA}[chave_proponente] ), {TABELA}[aprovado] = TRUE () )", "#,0"),
+    ("Parcela pelo Artigo 18",
+     f'DIVIDE ( CALCULATE ( [Valor captado], {TABELA}[enquadramento] = "Artigo 18" ), [Valor captado] )', "0.0%"),
+    # A tabela ufs não tem relação com projetos. População e PIB seguem só os filtros de UF e região.
+    ("População", f"CALCULATE ( SUM ( ufs[populacao] ), TREATAS ( CALCULATETABLE ( VALUES ( {TABELA}[uf] ), "
+                  f"ALLEXCEPT ( {TABELA}, {TABELA}[uf], {TABELA}[regiao] ) ), ufs[uf] ) )", "#,0"),
+    ("PIB", f"CALCULATE ( SUM ( ufs[pib] ), TREATAS ( CALCULATETABLE ( VALUES ( {TABELA}[uf] ), "
+            f"ALLEXCEPT ( {TABELA}, {TABELA}[uf], {TABELA}[regiao] ) ), ufs[uf] ) )", "#,0"),
+    ("Parcela da população", "DIVIDE ( [População], SUM ( ufs[populacao] ) )", "0.0%"),
+    ("Parcela do PIB", "DIVIDE ( [PIB], SUM ( ufs[pib] ) )", "0.0%"),
+    ("Captado por habitante", "DIVIDE ( [Valor captado], [População] )", "#,0"),
+    ("Parcela dos 20 maiores", f'VAR t = ADDCOLUMNS ( VALUES ( {TABELA}[chave_proponente] ), "@v", [Valor captado] ) '
+                               'RETURN DIVIDE ( SUMX ( TOPN ( 20, t, [@v] ), [@v] ), [Valor captado] )', "0.0%"),
+    ("Parcela dos 82 maiores", f'VAR t = ADDCOLUMNS ( VALUES ( {TABELA}[chave_proponente] ), "@v", [Valor captado] ) '
+                               'RETURN DIVIDE ( SUMX ( TOPN ( 82, t, [@v] ), [@v] ), [Valor captado] )', "0.0%"),
 ]
+
+EXTRAS = [  # colunas criadas no Power Query: nome, tipo, ordenar por
+    ("periodo_captacao", "string", None),
+    ("chave_proponente", "string", None),
+    ("faixa_valor", "string", "faixa_ordem"),
+    ("faixa_ordem", "int64", None),
+]
+
+UFS = [("uf", "type text", "string", "none"), ("regiao", "type text", "string", "none"),
+       ("populacao", "Int64.Type", "int64", "sum"), ("pib", "type number", "double", "sum")]
 
 
 def nome_tmdl(nome):
@@ -130,6 +156,7 @@ def gerar_modelo(pasta_dados):
         "\t\treturnErrorValuesAsNull",
         "",
         f"ref table {TABELA}",
+        "ref table ufs",
         "",
     ]))
     caminho_m = str(pasta_dados).replace('"', '""')
@@ -145,8 +172,11 @@ def gerar_modelo(pasta_dados):
     for nome, dax, formato in MEDIDAS:
         linhas += [f"\tmeasure {nome_tmdl(nome)} = {dax}", f"\t\tformatString: {formato}",
                    f"\t\tlineageTag: {tag('medida', nome)}", ""]
-    for nome, _, tipo, resumo in COLUNAS + [("periodo_captacao", None, "string", "none")]:
+    ordem = {n: o for n, _, o in EXTRAS if o}
+    for nome, _, tipo, resumo in COLUNAS + [(n, None, t, "none") for n, t, _ in EXTRAS]:
         linhas += [f"\tcolumn {nome}", f"\t\tdataType: {tipo}"]
+        if nome in ordem:
+            linhas.append(f"\t\tsortByColumn: {ordem[nome]}")
         if tipo == "dateTime":
             linhas.append("\t\tformatString: dd/mm/yyyy")
         elif tipo == "double" and nome.startswith("valor") or nome == "outras_fontes":
@@ -164,14 +194,38 @@ def gerar_modelo(pasta_dados):
         '\tFonte = Csv.Document(File.Contents(PastaDados & "\\projetos_powerbi.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),',
         "\tCabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),",
         f'\tTipos = Table.TransformColumnTypes(Cabecalhos, {{{tipos}}}, "pt-BR"),',
-        '\tPeriodo = Table.AddColumn(Tipos, "periodo_captacao", each if [ano] <= 2022 then "Captação encerrada (2019 a 2022)" else "Ainda captando (2023 a 2026)", type text)',
+        '\tPeriodo = Table.AddColumn(Tipos, "periodo_captacao", each if [ano] <= 2022 then "Captação encerrada (2019 a 2022)" else "Ainda captando (2023 a 2026)", type text),',
+        '\tChave = Table.AddColumn(Periodo, "chave_proponente", each ([cpf_cnpj] ?? "") & "|" & ([proponente] ?? ""), type text),',
+        '\tFaixa = Table.AddColumn(Chave, "faixa_valor", each let v = [valor_aprovado] in if v = null or v <= 0 then null else if v <= 100000 then "até 100 mil" else if v <= 300000 then "100 a 300 mil" else if v <= 1000000 then "300 mil a 1 mi" else if v <= 3000000 then "1 a 3 mi" else "acima de 3 mi", type text),',
+        '\tOrdem = Table.AddColumn(Faixa, "faixa_ordem", each if [faixa_valor] = null then null else List.PositionOf({"até 100 mil", "100 a 300 mil", "300 mil a 1 mi", "1 a 3 mi", "acima de 3 mi"}, [faixa_valor]) + 1, Int64.Type)',
         "in",
-        "\tPeriodo",
+        "\tOrdem",
     ]
     linhas += [f"\tpartition {TABELA} = m", "\t\tmode: import", "\t\tsource ="]
     linhas += ["\t\t\t\t" + l for l in m]
     linhas += ["", "\tannotation PBI_ResultType = Table", ""]
     escrever(MODELO / "definition" / "tables" / f"{TABELA}.tmdl", "\n".join(linhas))
+
+    # População (Censo 2022) e PIB (2023) por UF, gravados por analisar.py
+    linhas = ["table ufs", f"\tlineageTag: {tag('ufs')}", ""]
+    for nome, _, tipo, resumo in UFS:
+        linhas += [f"\tcolumn {nome}", f"\t\tdataType: {tipo}"]
+        if tipo != "string":
+            linhas.append("\t\tformatString: #,0")
+        linhas += [f"\t\tlineageTag: {tag('ufs', nome)}", f"\t\tsummarizeBy: {resumo}", f"\t\tsourceColumn: {nome}", ""]
+    tipos = ", ".join(f'{{"{n}", {t}}}' for n, t, _, _ in UFS)
+    m = [
+        "let",
+        '\tFonte = Csv.Document(File.Contents(PastaDados & "\\ufs_powerbi.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),',
+        "\tCabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),",
+        f'\tTipos = Table.TransformColumnTypes(Cabecalhos, {{{tipos}}}, "pt-BR")',
+        "in",
+        "\tTipos",
+    ]
+    linhas += ["\tpartition ufs = m", "\t\tmode: import", "\t\tsource ="]
+    linhas += ["\t\t\t\t" + l for l in m]
+    linhas += ["", "\tannotation PBI_ResultType = Table", ""]
+    escrever(MODELO / "definition" / "tables" / "ufs.tmdl", "\n".join(linhas))
 
 
 # ---------------------------------------------------------------- relatório
@@ -259,9 +313,9 @@ class Pagina:
                                                     "direction": "Ascending" if crescente else "Descending"}],
                                           "isDefaultSort": True}
         cores = [{"properties": {"fill": cor(c)}, "selector": {"metadata": f"{TABELA}.{m}"}}
-                 for m, c in zip(medidas, (AZUL, LARANJA))]
+                 for m, c in zip(medidas, (AZUL, LARANJA, VERDE))]
         if unidades is None:  # contagens por extenso, valores em R$ no automático
-            unidades = 1 if all(m.startswith("Projetos") for m in medidas) else 0
+            unidades = 1 if all(m.startswith(("Projetos", "Proponentes")) for m in medidas) else 0
         objetos = {
             "dataPoint": cores,
             "labels": [{"properties": {"show": lit(rotulos), "color": cor(TINTA_2), "fontSize": lit(8),
@@ -346,7 +400,48 @@ def paginas():
                ("Participação no captado", "Parte do total captado")],
               "Maiores captadores", "Valor captado", "Todos os anos. O filtro de proponente separa pessoas físicas, MEI e empresas",
               larguras={"proponente": 400, "uf": 40})
-    return [p1, p2, p3, p4]
+    p5 = Pagina("desigualdade", "Desigualdade")
+    p5.texto(16, 12, 610, 64, [("Quem fica com a captação", 18, True),
+                               ("Indicadores comparados com a literatura sobre a lei", 10, False)])
+    filtros_topo(p5)
+    for i, (medida, rotulo, unidades) in enumerate([
+            ("Parcela pelo Artigo 18", "Captado pelo Artigo 18 (dedução integral)", 0),
+            ("Captado por habitante", "Valor captado por habitante (R$)", 1),
+            ("Parcela dos 20 maiores", "Parte dos 20 maiores proponentes", 0),
+            ("Proponentes", "Proponentes com projeto aprovado", 1)]):
+        p5.cartao(16 + i * 314, 88, 302, 100, medida, rotulo, unidades)
+    p5.barras(16, 200, 520, 504, "clusteredBarChart", "regiao",
+              ["Participação no captado", "Parcela do PIB", "Parcela da população"],
+              "Captação, PIB e população por região", "PIB de 2023 e população do Censo 2022 (IBGE)",
+              ordenar="Participação no captado")
+    p5.barras(548, 200, 340, 504, "clusteredBarChart", "uf", ["Captado por habitante"],
+              "Valor captado por habitante (R$)", "Por UF do proponente", ordenar="Captado por habitante", unidades=1)
+    p5.barras(900, 200, 364, 246, "clusteredColumnChart", "faixa_valor", ["% que captaram 2019-2022"],
+              "Projetos que captaram, por valor aprovado", "Projetos de 2019 a 2022", ordenar="faixa_valor", crescente=True)
+    p5.barras(900, 458, 364, 246, "lineChart", "ano", ["Parcela dos 82 maiores", "Parcela dos 20 maiores"],
+              "Parte dos maiores proponentes no captado", "Por ano do projeto. Anos recentes ainda captando",
+              ordenar="ano", crescente=True, rotulos=False)
+    p5.visuais[-1]["filterConfig"] = filtro_ano_ate(2025)   # 2026 ainda está em curso
+    return [p1, p2, p3, p4, p5]
+
+
+def filtro_ano_ate(ano):
+    """Filtro de visual que mantém só os projetos até o ano dado."""
+    coluna = {"Column": {"Expression": {"SourceRef": {"Entity": TABELA}}, "Property": "ano"}}
+    return {"filters": [{
+        "name": tag("filtro_ano", str(ano))[:20].replace("-", ""),
+        "field": coluna,
+        "type": "Advanced",
+        "filter": {
+            "Version": 2,
+            "From": [{"Name": "p", "Entity": TABELA, "Type": 0}],
+            "Where": [{"Condition": {"Comparison": {
+                "ComparisonKind": 4,  # menor ou igual
+                "Left": {"Column": {"Expression": {"SourceRef": {"Source": "p"}}, "Property": "ano"}},
+                "Right": {"Literal": {"Value": f"{ano}L"}},
+            }}}],
+        },
+    }]}
 
 
 def tema():

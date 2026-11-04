@@ -7,3 +7,4 @@ model Model
 		returnErrorValuesAsNull
 
 ref table projetos
+ref table ufs

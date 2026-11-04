@@ -356,6 +356,8 @@ def literatura(t, aprovados, coorte):
 
     # Captado por habitante e em relação ao PIB, por UF
     uf = completos.groupby("uf")["valor_captado"].sum().to_frame("valor_captado").join(ibge)
+    ibge.assign(regiao=ibge.index.map(REGIAO_DA_UF)).to_csv(PAINEL / "ufs_powerbi.csv", sep=";", decimal=",",
+                                                          encoding="utf-8-sig")
     uf["por_habitante"] = uf["valor_captado"] / uf["populacao"]
     uf["por_mil_reais_de_pib"] = uf["valor_captado"] / uf["pib"] * 1000
     uf.sort_values("por_habitante", ascending=False).to_csv(RESULTADOS / "uf_por_habitante.csv", encoding="utf-8-sig")
@@ -372,7 +374,10 @@ def literatura(t, aprovados, coorte):
     grafico_faixas(por_faixa)
 
     # Proponentes por região, primeiro e último ano completos
-    prop = aprovados.groupby(["regiao", "ano"])["cpf_cnpj"].nunique().unstack()
+    # A API mascara parte do CPF, então a chave do proponente junta documento e nome
+    aprovados = aprovados.assign(chave=aprovados["cpf_cnpj"].astype(str) + "|" + aprovados["proponente"].astype(str))
+    completos = completos.assign(chave=completos["cpf_cnpj"].astype(str) + "|" + completos["proponente"].astype(str))
+    prop = aprovados.groupby(["regiao", "ano"])["chave"].nunique().unstack()
     ini, fim = ANOS_COMPLETOS
     cresc = (prop[fim] / prop[ini] - 1).rename("crescimento")
     pd.concat([prop[[ini, fim]], cresc], axis=1).to_csv(RESULTADOS / "proponentes_por_regiao.csv", encoding="utf-8-sig")
@@ -384,7 +389,7 @@ def literatura(t, aprovados, coorte):
     # Concentração ano a ano (20 e 82 maiores, os recortes usados por Teixeira, Xavier e Faria)
     linhas = {}
     for ano, g in completos.groupby("ano"):
-        p = g.groupby("cpf_cnpj")["valor_captado"].sum().sort_values(ascending=False)
+        p = g.groupby("chave")["valor_captado"].sum().sort_values(ascending=False)
         linhas[ano] = {"proponentes": len(p), "proponentes_que_captaram": int((p > 0).sum()),
                        "top20": p.head(20).sum() / p.sum(), "top82": p.head(82).sum() / p.sum()}
     conc = pd.DataFrame(linhas).T
