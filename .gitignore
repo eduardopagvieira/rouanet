@@ -1,0 +1,8 @@
+# Dados ficam fora do repositório (são grandes e podem ser baixados de novo pelos scripts)
+dados/
+log_*.txt
+__pycache__/
+*.parcial
+*.tmp
+.ipynb_checkpoints/
+.claude/
