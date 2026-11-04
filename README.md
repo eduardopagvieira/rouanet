@@ -50,7 +50,9 @@ Um projeto aprovado tem cerca de dois anos para captar, com prorrogações. Em 2
 
 ## Painel
 
-O roteiro do painel em Power BI, com as medidas DAX, está em [`painel/README.md`](painel/README.md).
+Painel interativo em Power BI com quatro páginas (visão geral, território, áreas e proponentes) e filtros de ano, região, área e tipo de proponente. O projeto fica em `painel/Rouanet.pbip`, salvo em arquivos de texto e gerado pelo script `painel/gerar_pbip.py`. Detalhes e medidas DAX em [`painel/README.md`](painel/README.md).
+
+![Painel em Power BI](figuras/05_painel_powerbi.png)
 
 ## Como rodar
 
@@ -60,6 +62,7 @@ python coletar_salic.py --teste   # baixa só 2 páginas para conferir
 python coletar_salic.py           # coleta completa, leva perto de uma hora
 python limpar.py
 python analisar.py
+python painel/gerar_pbip.py       # depois abra painel/Rouanet.pbip e clique em Atualizar
 ```
 
 No Windows com Miniconda, use `rodar_teste.bat` ou ative o ambiente antes (`conda activate base`). Sem isso o Python não encontra o módulo SSL.

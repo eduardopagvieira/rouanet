@@ -1,0 +1,4 @@
+expression PastaDados = "C:\Users\eduardo\OneDrive\Área de Trabalho\computador\projetos_pessoais\portifolio\rouanet\dados\painel" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 605d7180-c20c-5f79-b19e-16ccfc9f19e3
+
+	annotation PBI_ResultType = Text

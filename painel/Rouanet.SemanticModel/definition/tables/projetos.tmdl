@@ -1,0 +1,251 @@
+table projetos
+	lineageTag: 31486a7b-35da-5b30-a1c6-228f9f5b9fc1
+
+	measure 'Projetos aprovados' = CALCULATE ( COUNTROWS ( projetos ), projetos[aprovado] = TRUE () )
+		formatString: #,0
+		lineageTag: 3b6c6d80-7407-5abc-b9e9-1abf0f5950b6
+
+	measure 'Valor aprovado' = CALCULATE ( SUM ( projetos[valor_aprovado] ), projetos[aprovado] = TRUE () )
+		formatString: #,0
+		lineageTag: e474749c-c087-5e7f-a123-5ea2348b72d8
+
+	measure 'Valor captado' = CALCULATE ( SUM ( projetos[valor_captado] ), projetos[aprovado] = TRUE () )
+		formatString: #,0
+		lineageTag: 495325be-bd05-5f31-ad3e-9611506d3426
+
+	measure 'Taxa de captação' = DIVIDE ( [Valor captado], [Valor aprovado] )
+		formatString: 0.0%
+		lineageTag: b2a2893b-576d-51f9-a9e6-529dac945276
+
+	measure '% que captaram' = DIVIDE ( CALCULATE ( [Projetos aprovados], projetos[captou] = TRUE () ), [Projetos aprovados] )
+		formatString: 0.0%
+		lineageTag: af6384e4-77ca-59dc-bff1-cfb3ee7a1006
+
+	measure 'Participação no captado' = DIVIDE ( [Valor captado], CALCULATE ( [Valor captado], ALLSELECTED ( projetos ) ) )
+		formatString: 0.0%
+		lineageTag: 34e41c5f-4dc5-5933-82c4-43d95b56183b
+
+	measure 'Projetos aprovados 2019-2022' = CALCULATE ( [Projetos aprovados], projetos[ano] <= 2022 )
+		formatString: #,0
+		lineageTag: b0353e34-814f-5488-bd64-db0b1119d459
+
+	measure 'Valor captado 2019-2022' = CALCULATE ( [Valor captado], projetos[ano] <= 2022 )
+		formatString: #,0
+		lineageTag: ab7032a3-1675-5b87-b009-3ad1f63ab943
+
+	measure 'Taxa de captação 2019-2022' = CALCULATE ( [Taxa de captação], projetos[ano] <= 2022 )
+		formatString: 0.0%
+		lineageTag: 77acac15-25df-51b4-a61d-c5a898f045f4
+
+	measure '% que captaram 2019-2022' = CALCULATE ( [% que captaram], projetos[ano] <= 2022 )
+		formatString: 0.0%
+		lineageTag: fece2c59-6536-58a1-9280-f52b8adcc61a
+
+	column pronac
+		dataType: string
+		lineageTag: 20ff5065-034b-5c91-afa7-b07e60b94cde
+		summarizeBy: none
+		sourceColumn: pronac
+
+	column nome
+		dataType: string
+		lineageTag: cc040732-b7ee-554d-8eab-7056636e38da
+		summarizeBy: none
+		sourceColumn: nome
+
+	column ano
+		dataType: int64
+		lineageTag: c3f5e3c7-9153-5c67-99a5-2defe1b63901
+		summarizeBy: none
+		sourceColumn: ano
+
+	column data_inicio
+		dataType: dateTime
+		formatString: dd/mm/yyyy
+		lineageTag: 5722885e-6306-5964-8387-9de7a81888dd
+		summarizeBy: none
+		sourceColumn: data_inicio
+
+	column data_termino
+		dataType: dateTime
+		formatString: dd/mm/yyyy
+		lineageTag: ddb78e00-a64c-568f-a312-bdafffc76b79
+		summarizeBy: none
+		sourceColumn: data_termino
+
+	column uf
+		dataType: string
+		lineageTag: 41849736-cbd1-5fdb-ad81-ee72f35393bc
+		summarizeBy: none
+		sourceColumn: uf
+		dataCategory: StateOrProvince
+
+	column regiao
+		dataType: string
+		lineageTag: 6ab8ef40-0129-575c-8a97-7701c8f18ccd
+		summarizeBy: none
+		sourceColumn: regiao
+
+	column municipio
+		dataType: string
+		lineageTag: 59450a39-68bc-52e5-9532-7e9031287216
+		summarizeBy: none
+		sourceColumn: municipio
+
+	column area
+		dataType: string
+		lineageTag: 789eae43-34c4-54c3-b600-c801752e9318
+		summarizeBy: none
+		sourceColumn: area
+
+	column segmento
+		dataType: string
+		lineageTag: 5c5f57f8-8728-58c4-9af7-ef986b103e5c
+		summarizeBy: none
+		sourceColumn: segmento
+
+	column tipologia
+		dataType: string
+		lineageTag: f210da0b-7682-55f8-82b0-cd7bce167ff4
+		summarizeBy: none
+		sourceColumn: tipologia
+
+	column tipicidade
+		dataType: string
+		lineageTag: 53939c82-0be7-5542-878d-2f8f59e0b161
+		summarizeBy: none
+		sourceColumn: tipicidade
+
+	column enquadramento
+		dataType: string
+		lineageTag: 9ffb6fe8-1610-5dbd-80e2-30a0bf999053
+		summarizeBy: none
+		sourceColumn: enquadramento
+
+	column mecanismo
+		dataType: string
+		lineageTag: 165f90f5-452a-5c64-a265-b41224455ece
+		summarizeBy: none
+		sourceColumn: mecanismo
+
+	column etapa
+		dataType: string
+		lineageTag: bf01fc05-63a0-566f-b3c6-cab88d8fc3b8
+		summarizeBy: none
+		sourceColumn: etapa
+
+	column situacao_salic
+		dataType: string
+		lineageTag: 2cf35ddc-6973-51fd-8b8c-66d15a0f968e
+		summarizeBy: none
+		sourceColumn: situacao_salic
+
+	column proponente
+		dataType: string
+		lineageTag: 60ad76fd-62e6-587b-9dd8-bbf07932a6d8
+		summarizeBy: none
+		sourceColumn: proponente
+
+	column cpf_cnpj
+		dataType: string
+		lineageTag: 19b84321-cd77-5325-933a-7db5ace0d506
+		summarizeBy: none
+		sourceColumn: cpf_cnpj
+
+	column tipo_proponente
+		dataType: string
+		lineageTag: f43a8954-88cd-589e-ba11-f8c5be7e34c8
+		summarizeBy: none
+		sourceColumn: tipo_proponente
+
+	column valor_proposta
+		dataType: double
+		formatString: #,0
+		lineageTag: b2c84648-7267-5b6c-acff-0b2d13825c8b
+		summarizeBy: sum
+		sourceColumn: valor_proposta
+
+	column valor_solicitado
+		dataType: double
+		formatString: #,0
+		lineageTag: cf8b61e1-f6ee-504e-8508-f5160ee304b5
+		summarizeBy: sum
+		sourceColumn: valor_solicitado
+
+	column valor_aprovado
+		dataType: double
+		formatString: #,0
+		lineageTag: f45ba205-c44c-5708-b026-4d739fdf6fb4
+		summarizeBy: sum
+		sourceColumn: valor_aprovado
+
+	column valor_projeto
+		dataType: double
+		formatString: #,0
+		lineageTag: 0af7ad35-aa95-5c89-83ba-59182f2f2428
+		summarizeBy: sum
+		sourceColumn: valor_projeto
+
+	column valor_captado
+		dataType: double
+		formatString: #,0
+		lineageTag: bbbb685e-dfde-5627-99cf-c5ab78008ed1
+		summarizeBy: sum
+		sourceColumn: valor_captado
+
+	column outras_fontes
+		dataType: double
+		formatString: #,0
+		lineageTag: 0c60665b-4379-587e-9434-cf3b8deaaad3
+		summarizeBy: sum
+		sourceColumn: outras_fontes
+
+	column aprovado
+		dataType: boolean
+		lineageTag: 687d25ed-c405-548a-adb1-54c03330e233
+		summarizeBy: none
+		sourceColumn: aprovado
+
+	column captou
+		dataType: boolean
+		lineageTag: 227277bf-7649-5c20-a88a-423b65b7e938
+		summarizeBy: none
+		sourceColumn: captou
+
+	column taxa_captacao
+		dataType: double
+		formatString: 0.0%
+		lineageTag: 067e2148-da0c-572a-a2a1-1a5842dcc2d7
+		summarizeBy: none
+		sourceColumn: taxa_captacao
+
+	column alerta_valor
+		dataType: string
+		lineageTag: 946fcd56-4883-5897-8a67-c4e32b9d8b3b
+		summarizeBy: none
+		sourceColumn: alerta_valor
+
+	column local_realizacao
+		dataType: string
+		lineageTag: 650df513-c513-5d5e-b80c-c5bb2fa103b1
+		summarizeBy: none
+		sourceColumn: local_realizacao
+
+	column periodo_captacao
+		dataType: string
+		lineageTag: 64b2d676-a9e7-5439-8a44-30b1c9aa0567
+		summarizeBy: none
+		sourceColumn: periodo_captacao
+
+	partition projetos = m
+		mode: import
+		source =
+				let
+					Fonte = Csv.Document(File.Contents(PastaDados & "\projetos_powerbi.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+					Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),
+					Tipos = Table.TransformColumnTypes(Cabecalhos, {{"pronac", type text}, {"nome", type text}, {"ano", Int64.Type}, {"data_inicio", type date}, {"data_termino", type date}, {"uf", type text}, {"regiao", type text}, {"municipio", type text}, {"area", type text}, {"segmento", type text}, {"tipologia", type text}, {"tipicidade", type text}, {"enquadramento", type text}, {"mecanismo", type text}, {"etapa", type text}, {"situacao_salic", type text}, {"proponente", type text}, {"cpf_cnpj", type text}, {"tipo_proponente", type text}, {"valor_proposta", type number}, {"valor_solicitado", type number}, {"valor_aprovado", type number}, {"valor_projeto", type number}, {"valor_captado", type number}, {"outras_fontes", type number}, {"aprovado", type logical}, {"captou", type logical}, {"taxa_captacao", type number}, {"alerta_valor", type text}, {"local_realizacao", type text}}, "pt-BR"),
+					Periodo = Table.AddColumn(Tipos, "periodo_captacao", each if [ano] <= 2022 then "Captação encerrada (2019 a 2022)" else "Ainda captando (2023 a 2026)", type text)
+				in
+					Periodo
+
+	annotation PBI_ResultType = Table
