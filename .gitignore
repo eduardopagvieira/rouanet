@@ -7,6 +7,6 @@ __pycache__/
 .ipynb_checkpoints/
 .claude/
 # Arquivos locais do Power BI Desktop (cache de dados e preferências)
-.pbi/localSettings.json
-.pbi/cache.abf
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
 *.pbix
