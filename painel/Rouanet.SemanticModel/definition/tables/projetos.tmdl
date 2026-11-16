@@ -112,9 +112,9 @@ table projetos
 	column uf
 		dataType: string
 		lineageTag: 41849736-cbd1-5fdb-ad81-ee72f35393bc
+		dataCategory: StateOrProvince
 		summarizeBy: none
 		sourceColumn: uf
-		dataCategory: StateOrProvince
 
 	column regiao
 		dataType: string
@@ -281,10 +281,10 @@ table projetos
 
 	column faixa_valor
 		dataType: string
-		sortByColumn: faixa_ordem
 		lineageTag: 1d412cb4-63d8-5827-948d-5726a3bf432a
 		summarizeBy: none
 		sourceColumn: faixa_valor
+		sortByColumn: faixa_ordem
 
 	column faixa_ordem
 		dataType: int64
@@ -307,3 +307,4 @@ table projetos
 					Ordem
 
 	annotation PBI_ResultType = Table
+

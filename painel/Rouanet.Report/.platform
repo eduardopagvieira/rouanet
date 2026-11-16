@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "Rouanet"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "2d95397b-ac67-4d78-89d0-8b46c33f48a4"
+  }
+}

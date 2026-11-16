@@ -6,5 +6,10 @@ model Model
 		legacyRedirects
 		returnErrorValuesAsNull
 
+annotation PBI_ProTooling = ["DevMode"]
+
 ref table projetos
 ref table ufs
+
+ref cultureInfo pt-BR
+
