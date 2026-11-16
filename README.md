@@ -78,6 +78,22 @@ O TCU aponta um estoque de dezenas de milhares de projetos com prestação de co
 * Câmara dos Deputados (2016). CPI da Lei Rouanet, apresentações em audiências públicas. [camara.leg.br](https://www2.camara.leg.br/atividade-legislativa/comissoes/comissoes-temporarias/parlamentar-de-inquerito/55a-legislatura/cpi-lei-rouanet/documentos/audiencias-publicas/ApresentacaoJucanaCPIv5.pdf)
 * Congresso em Foco. Os números contraditórios da Rouanet não mentem. [congressoemfoco.com.br](https://www.congressoemfoco.com.br/artigo/115490/os-numeros-contraditorios-da-rouanet-nao-mentem)
 
+## O que o texto dos projetos revela
+
+Cada projeto tem um resumo e uma lista de objetivos escritos pelo proponente. Li esses textos dos 12.958 projetos aprovados de 2019 a 2022 (prazo de captação encerrado) para saber se o jeito de descrever o projeto tem relação com conseguir patrocínio. O código está em `textos.py`.
+
+Primeiro comparei o vocabulário de quem captou e de quem não captou com o log da razão de chances com prior de Dirichlet informativo (Monroe, Colaresi e Quinn, 2008), feito dentro de cada área cultural para que uma palavra não pareça boa só porque a área dela capta mais. Quem captou fala de continuidade, manutenção, programação anual, atendimento e comunidade, o vocabulário de instituições que já funcionam (museus, orquestras, festivais com várias edições). Quem não captou fala de produzir uma obra, gravação, artista e divulgação, e repete trechos de formulário como "ocorrerá de maneira ampla" e "respeitando os limites".
+
+![Palavras](figuras/12_palavras.png)
+
+Depois um modelo de tópicos (NMF) separou os resumos em 14 temas, que nomeei lendo as palavras e uma amostra de textos de cada um. Para cada tema calculei a taxa de captação observada e a taxa ajustada por regressão logística, mantendo área, região, faixa de valor e ano. Oficinas para crianças e jovens, festivais de cinema e museus ficam acima de 57% mesmo depois do ajuste. Dois temas não são definidos pelo conteúdo, e sim por texto padronizado. Os projetos que copiam os objetivos do artigo 1º da lei captam 26% (36% ajustado), e os de gravação de disco escritos sobre um mesmo modelo captam 8% (18% ajustado), contra 51% na média.
+
+![Temas](figuras/13_temas.png)
+
+O resultado é uma associação, não um efeito do texto. Texto genérico provavelmente indica proponentes com menos estrutura e menos contato com empresas, e é isso que pesa na hora de captar. Para quem decide patrocínio, o texto serve como sinal rápido de maturidade do proponente. Para quem escreve projetos, a lição é descrever o que vai acontecer, para quem e com que continuidade.
+
+* Monroe, B. L., Colaresi, M. P. e Quinn, K. M. (2008). Fightin' Words. Lexical feature selection and evaluation for identifying the content of political conflict. *Political Analysis*, 16(4), p. 372 a 403.
+
 ## Fonte
 
 API de dados abertos do SALIC, do Ministério da Cultura (`http://api.salic.cultura.gov.br/api/v1/projetos/`). A API devolve 34 campos por projeto, entre eles segmento, UF, município, proponente, situação e os valores solicitado, aprovado e captado. Ela só cobre projetos de 2019 em diante. População (Censo 2022, tabela 4709) e PIB por UF (2023, tabela 5938) vêm do SIDRA, do IBGE, e são baixados por `analisar.py`.
@@ -121,6 +137,7 @@ python coletar_salic.py --teste   # baixa só 2 páginas para conferir
 python coletar_salic.py           # coleta completa, leva perto de uma hora
 python limpar.py
 python analisar.py
+python textos.py                  # análise do texto dos projetos, perto de um minuto
 python painel/gerar_pbip.py       # depois abra painel/Rouanet.pbip e clique em Atualizar
 ```
 
