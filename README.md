@@ -9,7 +9,7 @@ Análise dos 63.674 projetos registrados no SALIC entre 2019 e 2026, da coleta n
 * **Metade do valor aprovado é captada.** Entre os projetos de 2019 a 2022, que já tiveram o prazo de captação encerrado, 52% do valor aprovado foi captado e 51% dos projetos captaram algum valor.
 * **A captação é muito concentrada.** De 28.493 proponentes com projeto aprovado, 1% ficou com 52% de todo o valor captado e 10% ficaram com 94%. Outros 72% não captaram nada.
 * **Empresas captam muito mais que pessoas físicas.** Pessoas jurídicas captaram 54% do valor aprovado, contra 20% das pessoas físicas e 29% dos MEIs.
-* **O Sudeste capta mais do que sua parcela de projetos.** A região tem 60% dos projetos aprovados e 76% do valor captado. Sul, Nordeste e Centro-Oeste captam menos do que sua parcela.
+* **O Sudeste capta mais do que sua parcela de projetos.** Entre os projetos de 2019 a 2022, a região tem 60% dos projetos aprovados e 76% do valor captado. Somando os projetos de 2023 a 2025, que ainda podem estar captando, a parcela é de 74%. Sul, Nordeste e Centro-Oeste captam menos do que sua parcela.
 * **Museus captam mais, festas e cultura popular bem menos.** Museus e memória captaram 68% do valor aprovado. Festas e cultura popular, 24%.
 * **Quase tudo é renúncia integral.** 99,4% do valor captado entrou pelo Artigo 18, em que o patrocinador deduz 100% do imposto. Detalhes e comparação com a literatura na seção abaixo.
 * **O valor aprovado se multiplicou a partir de 2023.** Passou de R$ 2 a 4 bilhões por ano para R$ 16 a 20 bilhões, sem crescimento equivalente da captação até agora.
